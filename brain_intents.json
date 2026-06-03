@@ -1,0 +1,94 @@
+{
+  "_meta": {
+    "fallback_intent": "fallback",
+    "note": "Starter intents. Edit me! 'keywords' are synonym-expanded; 'examples' are matched by meaning. An intent with 'requires' is a COMPOSITE: it only fires when ALL listed concepts appear together, and it outranks the single-concept intents (this is how the brain combines intents into one answer). 'requires' values can be plain words or context tags like @morning, @winter, @rainy."
+  },
+  "intents": {
+    "fallback": {
+      "responses": [
+        "I'm not sure what you mean yet. Try 'help' to see what I know, or teach me the answer.",
+        "Hmm, that's a new one. Type the answer and I'll remember it for next time."
+      ]
+    },
+
+    "greeting": {
+      "keywords": ["hello", "hi", "hey"],
+      "examples": ["hello there", "hey, how's it going", "good to see you"],
+      "responses": ["Hello!", "Hey there.", "Hi — what can I do for you?"]
+    },
+
+    "farewell": {
+      "keywords": ["bye", "goodbye", "later"],
+      "examples": ["see you later", "goodnight", "I'm heading out"],
+      "responses": ["See you!", "Take care.", "Bye for now."]
+    },
+
+    "thanks": {
+      "keywords": ["thanks", "thank", "appreciate"],
+      "examples": ["thank you so much", "much appreciated"],
+      "responses": ["Anytime!", "You're welcome.", "Happy to help."]
+    },
+
+    "identity": {
+      "keywords": ["who", "yourself", "identity", "name"],
+      "examples": ["who are you", "what are you", "tell me about yourself"],
+      "responses": [
+        "I'm a tiny intent brain. I work out what you mean — even with different wording — and answer. Open brain_intents.json to teach me your own intents."
+      ]
+    },
+
+    "help": {
+      "keywords": ["help", "command", "feature", "ability"],
+      "examples": ["what can you do", "show me your commands", "what are you capable of"],
+      "responses": [
+        "I can tell the time and date, do quick math, greet you, and more. Try: 'what time is it', '12 times 8', or combine them: 'the time and the date'. Everything I know lives in brain_intents.json."
+      ]
+    },
+
+    "time": {
+      "keywords": ["time", "clock", "hour"],
+      "examples": ["what time is it", "got the time", "what's the hour"],
+      "slots": {"t": "current_time"},
+      "responses": ["It's {t}.", "Right now it's {t}.", "The time is {t}."]
+    },
+
+    "date": {
+      "keywords": ["date", "day", "today"],
+      "examples": ["what is the date", "what day is it", "today's date please"],
+      "slots": {"d": "current_date"},
+      "responses": ["Today is {d}.", "It's {d}."]
+    },
+
+    "math": {
+      "keywords": ["calculate", "plus", "minus", "times", "divided"],
+      "examples": ["what is 2 plus 2", "calculate 15 times 3", "what's 100 divided by 4"],
+      "needs_number": true,
+      "slots": {"result": "math_eval"},
+      "responses": ["That comes to {result}.", "= {result}", "The answer is {result}."]
+    },
+
+    "plan": {
+      "keywords": ["plan", "schedule", "agenda", "todo", "task"],
+      "examples": ["what's on my agenda", "show my plans", "what do I have scheduled"],
+      "responses": [
+        "Here's where your plans would go — wire this intent up to your own calendar or to-do list in brain_intents.json."
+      ]
+    },
+
+    "weather": {
+      "keywords": ["weather", "forecast", "rain", "sunny", "temperature"],
+      "examples": ["what's the weather", "is it going to rain", "how hot is it outside"],
+      "responses": [
+        "I can't read a live forecast in this demo — but tell me the conditions (e.g. \"it's pouring outside\") and I'll remember them."
+      ]
+    },
+
+    "plan_weather": {
+      "requires": ["plan", "weather"],
+      "examples": ["should I plan around the weather", "plan my day based on the forecast"],
+      "responses": [
+        "Planning around the weather, are we? This is a COMPOSITE intent — it only fired because you mentioned both a plan AND the weather. Neither word alone would trigger it."
+      ]
+    }
+  }
+}

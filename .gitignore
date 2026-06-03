@@ -1,0 +1,11 @@
+# Runtime state — created by the brain as it runs, not source
+brain_memory.json
+brain_learned.json
+brain_unknowns.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/

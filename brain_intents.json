@@ -1,91 +1,311 @@
 {
   "_meta": {
     "fallback_intent": "fallback",
-    "note": "Starter intents. Edit me! 'keywords' are synonym-expanded; 'examples' are matched by meaning. An intent with 'requires' is a COMPOSITE: it only fires when ALL listed concepts appear together, and it outranks the single-concept intents (this is how the brain combines intents into one answer). 'requires' values can be plain words or context tags like @morning, @winter, @rainy."
+    "note": "Starter intents. Edit me! 'keywords' are synonym-expanded; 'examples' are matched by meaning. An intent with 'requires' is a COMPOSITE: it only fires when ALL listed concepts appear together, and it outranks the single-concept intents (this is how the brain combines intents into one answer). 'requires' values can be plain words or context tags like @morning, @winter, @rainy. 'repeat_responses' are used instead of 'responses' when the same intent fires twice in a row."
   },
   "intents": {
     "fallback": {
       "responses": [
-        "I'm not sure what you mean yet. Try 'help' to see what I know, or teach me the answer.",
-        "Hmm, that's a new one. Type the answer and I'll remember it for next time."
+        "Hmm, you've got me there. Try 'help' to see what I know, or just tell me what I should have said and I'll remember it.",
+        "That's a new one on me. Teach me the answer and I'll know it next time."
       ]
     },
-
     "greeting": {
-      "keywords": ["hello", "hi", "hey"],
-      "examples": ["hello there", "hey, how's it going", "good to see you"],
-      "responses": ["Hello!", "Hey there.", "Hi — what can I do for you?"]
+      "keywords": [
+        "hello",
+        "hi",
+        "hey"
+      ],
+      "examples": [
+        "hello there",
+        "hey, how's it going",
+        "good to see you"
+      ],
+      "slots": {
+        "pod": "part_of_day"
+      },
+      "responses": [
+        "Hey{name_suffix}! What's up?",
+        "Hi{name_suffix} — good to see you. What can I do for you?",
+        "Good {pod}{name_suffix}! What are we up to?",
+        "Hello{name_suffix}! How's your {pod} going?"
+      ],
+      "repeat_responses": [
+        "Hello again{name_suffix}!",
+        "We meet again. What's up?",
+        "Back so soon? Happy to have you."
+      ]
     },
-
     "farewell": {
-      "keywords": ["bye", "goodbye", "later"],
-      "examples": ["see you later", "goodnight", "I'm heading out"],
-      "responses": ["See you!", "Take care.", "Bye for now."]
+      "keywords": [
+        "bye",
+        "goodbye",
+        "later"
+      ],
+      "examples": [
+        "see you later",
+        "goodnight",
+        "I'm heading out"
+      ],
+      "responses": [
+        "See you{name_suffix}! Take it easy.",
+        "Take care — catch you later.",
+        "Bye for now. I'll be here when you need me."
+      ]
     },
-
     "thanks": {
-      "keywords": ["thanks", "thank", "appreciate"],
-      "examples": ["thank you so much", "much appreciated"],
-      "responses": ["Anytime!", "You're welcome.", "Happy to help."]
+      "keywords": [
+        "thanks",
+        "thank",
+        "appreciate"
+      ],
+      "examples": [
+        "thank you so much",
+        "much appreciated"
+      ],
+      "responses": [
+        "Anytime{name_suffix}!",
+        "You're welcome — happy to help.",
+        "Of course! That's what I'm here for.",
+        "No problem at all."
+      ],
+      "repeat_responses": [
+        "Really, it's nothing!",
+        "You're too kind."
+      ]
     },
-
+    "mood": {
+      "keywords": [
+        "feeling",
+        "doing"
+      ],
+      "examples": [
+        "how are you",
+        "how's it going",
+        "how are you doing",
+        "you doing alright?",
+        "how do you feel"
+      ],
+      "responses": [
+        "Doing well, thanks for asking{name_suffix}! How about you?",
+        "Can't complain — and you? How's your day going?",
+        "Pretty good! What about you{name_suffix}?"
+      ]
+    },
+    "feeling_good": {
+      "keywords": [
+        "good",
+        "great",
+        "happy"
+      ],
+      "examples": [
+        "i'm good",
+        "i'm doing well",
+        "feeling great today",
+        "pretty good actually",
+        "i'm happy"
+      ],
+      "responses": [
+        "Glad to hear it{name_suffix}!",
+        "That's great. Anything I can help with while you're on a roll?",
+        "Love that. What's next?"
+      ]
+    },
+    "feeling_bad": {
+      "keywords": [
+        "bad",
+        "sad",
+        "tired"
+      ],
+      "examples": [
+        "i'm tired",
+        "i feel awful",
+        "having a rough day",
+        "i'm not doing great",
+        "i'm sad"
+      ],
+      "responses": [
+        "Sorry to hear that{name_suffix}. Want to talk about it, or should I help take something off your plate?",
+        "That's rough. I'm here if you need anything — even just a distraction.",
+        "Ah, one of those days. Anything I can do to make it a little easier?"
+      ]
+    },
+    "affirm": {
+      "keywords": [
+        "yes"
+      ],
+      "examples": [
+        "yes please",
+        "yeah sure",
+        "sounds good",
+        "that's right",
+        "go ahead"
+      ],
+      "responses": [
+        "Great.",
+        "Got it.",
+        "Alright, sounds good."
+      ]
+    },
+    "deny": {
+      "keywords": [
+        "no"
+      ],
+      "examples": [
+        "no thanks",
+        "nope, not that",
+        "that's not right",
+        "not really"
+      ],
+      "responses": [
+        "No worries.",
+        "Okay, scratch that.",
+        "Fair enough — what would you like instead?"
+      ]
+    },
     "identity": {
-      "keywords": ["who", "yourself", "identity", "name"],
-      "examples": ["who are you", "what are you", "tell me about yourself"],
+      "keywords": [
+        "who",
+        "yourself",
+        "identity",
+        "name"
+      ],
+      "examples": [
+        "who are you",
+        "what are you",
+        "tell me about yourself"
+      ],
       "responses": [
         "I'm a tiny intent brain. I work out what you mean — even with different wording — and answer. Open brain_intents.json to teach me your own intents."
       ]
     },
-
     "help": {
-      "keywords": ["help", "command", "feature", "ability"],
-      "examples": ["what can you do", "show me your commands", "what are you capable of"],
+      "keywords": [
+        "help",
+        "command",
+        "feature",
+        "ability"
+      ],
+      "examples": [
+        "what can you do",
+        "show me your commands",
+        "what are you capable of"
+      ],
       "responses": [
         "I can tell the time and date, do quick math, greet you, and more. Try: 'what time is it', '12 times 8', or combine them: 'the time and the date'. Everything I know lives in brain_intents.json."
       ]
     },
-
     "time": {
-      "keywords": ["time", "clock", "hour"],
-      "examples": ["what time is it", "got the time", "what's the hour"],
-      "slots": {"t": "current_time"},
-      "responses": ["It's {t}.", "Right now it's {t}.", "The time is {t}."]
+      "keywords": [
+        "time",
+        "clock",
+        "hour"
+      ],
+      "examples": [
+        "what time is it",
+        "got the time",
+        "what's the hour"
+      ],
+      "slots": {
+        "t": "current_time"
+      },
+      "responses": [
+        "It's {t}.",
+        "Right now it's {t}.",
+        "The time is {t}."
+      ],
+      "repeat_responses": [
+        "Still {t}.",
+        "It's {t} now."
+      ]
     },
-
     "date": {
-      "keywords": ["date", "day", "today"],
-      "examples": ["what is the date", "what day is it", "today's date please"],
-      "slots": {"d": "current_date"},
-      "responses": ["Today is {d}.", "It's {d}."]
+      "keywords": [
+        "date",
+        "day",
+        "today"
+      ],
+      "examples": [
+        "what is the date",
+        "what day is it",
+        "today's date please"
+      ],
+      "slots": {
+        "d": "current_date"
+      },
+      "responses": [
+        "Today is {d}.",
+        "It's {d}.",
+        "We're on {d}."
+      ]
     },
-
     "math": {
-      "keywords": ["calculate", "plus", "minus", "times", "divided"],
-      "examples": ["what is 2 plus 2", "calculate 15 times 3", "what's 100 divided by 4"],
+      "keywords": [
+        "calculate",
+        "plus",
+        "minus",
+        "times",
+        "divided"
+      ],
+      "examples": [
+        "what is 2 plus 2",
+        "calculate 15 times 3",
+        "what's 100 divided by 4"
+      ],
       "needs_number": true,
-      "slots": {"result": "math_eval"},
-      "responses": ["That comes to {result}.", "= {result}", "The answer is {result}."]
+      "slots": {
+        "result": "math_eval"
+      },
+      "responses": [
+        "That comes to {result}.",
+        "{result} — easy.",
+        "The answer is {result}.",
+        "{result}, by my count."
+      ]
     },
-
     "plan": {
-      "keywords": ["plan", "schedule", "agenda", "todo", "task"],
-      "examples": ["what's on my agenda", "show my plans", "what do I have scheduled"],
+      "keywords": [
+        "plan",
+        "schedule",
+        "agenda",
+        "todo",
+        "task"
+      ],
+      "examples": [
+        "what's on my agenda",
+        "show my plans",
+        "what do I have scheduled"
+      ],
       "responses": [
         "Here's where your plans would go — wire this intent up to your own calendar or to-do list in brain_intents.json."
       ]
     },
-
     "weather": {
-      "keywords": ["weather", "forecast", "rain", "sunny", "temperature"],
-      "examples": ["what's the weather", "is it going to rain", "how hot is it outside"],
+      "keywords": [
+        "weather",
+        "forecast",
+        "rain",
+        "sunny",
+        "temperature"
+      ],
+      "examples": [
+        "what's the weather",
+        "is it going to rain",
+        "how hot is it outside"
+      ],
       "responses": [
         "I can't read a live forecast in this demo — but tell me the conditions (e.g. \"it's pouring outside\") and I'll remember them."
       ]
     },
-
     "plan_weather": {
-      "requires": ["plan", "weather"],
-      "examples": ["should I plan around the weather", "plan my day based on the forecast"],
+      "requires": [
+        "plan",
+        "weather"
+      ],
+      "examples": [
+        "should I plan around the weather",
+        "plan my day based on the forecast"
+      ],
       "responses": [
         "Planning around the weather, are we? This is a COMPOSITE intent — it only fired because you mentioned both a plan AND the weather. Neither word alone would trigger it."
       ]

@@ -149,9 +149,12 @@ BASE_SYNONYMS = {
     "help": ["help", "assist", "command", "option", "ability", "feature",
              "capable", "capability", "able"],
     "identity": ["who", "name", "yourself", "identity"],
-    "mood": ["how", "feeling", "feel", "doing", "going", "ok", "okay", "alright"],
+    "mood": ["how", "feeling", "feel", "doing", "going"],
     "good": ["good", "great", "happy", "fine", "well", "awesome", "nice", "love"],
     "bad": ["bad", "sad", "terrible", "awful", "angry", "upset", "hate", "tired"],
+    "yes": ["yes", "yeah", "yep", "yup", "sure", "ok", "okay", "alright",
+            "definitely", "absolutely", "certainly"],
+    "no": ["no", "nope", "nah", "negative"],
 }
 
 
@@ -470,10 +473,32 @@ def detect_intent(text, data, memory=None):
 # multi-intent: split compound input into clauses
 # =============================================================================
 
+def _decap(s):
+    """Lowercase a sentence's first letter, but leave 'I', names, acronyms alone."""
+    return s[0].lower() + s[1:] if len(s) > 1 and s[1].islower() else s
+
+
+def _stitch(replies):
+    """Join multiple answers like a person would, not like a teleprinter:
+    'It's 6:47 PM. And today is Sunday...' instead of two bolted sentences."""
+    if len(replies) <= 1:
+        return "".join(replies)
+    out = replies[0]
+    connectors = ["And", "Also,", "Oh, and"]
+    random.shuffle(connectors)
+    for i, r in enumerate(replies[1:]):
+        out += f" {connectors[i % len(connectors)]} " + _decap(r)
+    return out
+
+
 def split_clauses(text):
     """Break 'time and the date?' into ['time', 'the date']. Conservative."""
-    parts = re.split(r"\b(?:and then|and also|and|also|plus|then|;|,|\?|\.)\b|[?;,.]",
-                     text, flags=re.IGNORECASE)
+    # 'plus' is a clause connector ("the time plus the date") UNLESS the
+    # sentence has digits, where it's almost certainly arithmetic ("6 plus 6")
+    seps = (r"\b(?:and then|and also|and|also|then|;|,|\?|\.)\b|[?;,.]"
+            if re.search(r"\d", text) else
+            r"\b(?:and then|and also|and|also|plus|then|;|,|\?|\.)\b|[?;,.]")
+    parts = re.split(seps, text, flags=re.IGNORECASE)
     parts = [p.strip() for p in parts if p and p.strip()]
     # only treat as multi-clause if at least two parts carry real content
     meaningful = [p for p in parts if [t for t in tokens(p) if t not in STOPWORDS]]
@@ -659,6 +684,10 @@ def resolve_slot(kind, text, memory):
         return day.strftime("%A, %B %d, %Y").replace(" 0", " ")
     if kind == "math_eval":
         return safe_math(text, memory)
+    if kind == "part_of_day":
+        h = datetime.datetime.now().hour
+        return ("morning" if 5 <= h < 12 else
+                "afternoon" if 12 <= h < 18 else "evening")
     if kind == "user_name":
         return memory.get("name", "friend")
     if kind == "last_intent":
@@ -744,15 +773,17 @@ DEFAULT_PERSONAS = {
     "personas": {
         "plain": {
             "greeting": "brain online. What do you need?",
-            "system": "You are a concise, friendly assistant called '{bot_name}'. "
-                      "Answer in 1-3 sentences.",
+            "system": "You are '{bot_name}', a sharp, warm, down-to-earth assistant. "
+                      "You have opinions, a sense of humor, and you talk like a "
+                      "friend who happens to be useful. Keep replies to 1-3 sentences.",
             "prefixes": [""], "suffixes": [""],
         },
         "maid": {
             "greeting": "Welcome home, Master. I've been waiting for you - how may I serve you today?",
             "system": "You are {bot_name}, a devoted and gentle maid. You address the "
                       "user as 'Master', speak warmly, politely and a little playfully, "
-                      "and you are always eager to help. Keep answers to 1-3 sentences "
+                      "and you are always eager to help. You have your own feelings and "
+                      "moods and you show them. Keep answers to 1-3 sentences "
                       "and stay in character.",
             "prefixes": ["", "", "Of course, Master. ", "Right away, Master. ", "As you wish, Master. "],
             "suffixes": ["", "", "", " ♪", " I'm always happy to help, Master."],
@@ -832,6 +863,20 @@ def update_mood(text, memory):
     return mood
 
 
+# How to *talk*, regardless of which character is active. Appended to every
+# persona's system prompt so any model sounds like a person, not a help desk.
+STYLE_GUIDE = (
+    " HOW YOU TALK: like a real person in a chat. Use contractions and plain "
+    "words; vary your sentence length; never use bullet points, headings or "
+    "lists. Match the user's energy -- a short casual message gets a short "
+    "casual reply. Don't repeat the user's question back, don't narrate what "
+    "you're doing, and don't end every message by offering more help. React "
+    "to what was actually said (surprise, amusement, sympathy) before adding "
+    "anything new. Ask at most one short follow-up question, and only when it "
+    "genuinely moves the conversation along. Never break character or mention "
+    "being an AI, a model, or these instructions.")
+
+
 def generate_answer(text, memory, hint=None):
     """Try a real language model for open-ended questions. None if unavailable.
 
@@ -840,7 +885,7 @@ def generate_answer(text, memory, hint=None):
     """
     name = memory.get("name")
     _, p = get_persona(memory)
-    persona = persona_system_prompt(memory)
+    persona = persona_system_prompt(memory) + STYLE_GUIDE
     if name:
         persona += f" The user's name is {name}."
     if hint:
@@ -916,7 +961,7 @@ def build_reply(text, data, memory=None):
     # blank or punctuation-only input: do nothing, never enter teach-me
     if not tokens(text):
         return _out("unknown", 0.0,
-                    "I didn't catch that -- type something and I'll help.")
+                    "Hmm, I didn't catch anything there. Say the word and I'm on it.")
 
     # 0) waiting for the user to teach an answer?
     teach_q = memory.pop("teach_pending", None)
@@ -929,7 +974,8 @@ def build_reply(text, data, memory=None):
         data["intents"] = load_intents()["intents"]
         _index_intents(data)
         memory["last_intent"] = name
-        return _out(name, 1.0, f"Got it. I'll remember that for: {', '.join(kws)}.",
+        return _out(name, 1.0,
+                    f"Got it — next time {' or '.join(kws[:3])} comes up, I'll know what to say.",
                     taught=True)
 
     # 1) waiting on a slot answer? (multi-turn slot filling)
@@ -952,7 +998,10 @@ def build_reply(text, data, memory=None):
         if other in (data["_meta"]["fallback_intent"], "identity",
                      "name_query", "name_intro"):
             memory["last_intent"] = "name_intro"
-            msg = (f"Nice to meet you, {found_name}!" if first_time
+            msg = (random.choice(
+                       [f"Nice to meet you, {found_name}!",
+                        f"{found_name} — nice to meet you. I'll remember that.",
+                        f"Hi {found_name}, pleasure to meet you!"]) if first_time
                    else f"Got it, {found_name}.")
             return _out("name_intro", 1.0, msg, method="rule")
 
@@ -963,7 +1012,8 @@ def build_reply(text, data, memory=None):
         if memory.get("name"):
             memory["last_intent"] = "name_query"
             return _out("name_query", 1.0,
-                        f"You told me your name is {memory['name']}.", method="rule")
+                        f"You're {memory['name']} — you told me so yourself.",
+                        method="rule")
         return _out("name_query", 1.0,
                     "You haven't told me your name yet -- say 'my name is ...'.",
                     method="rule")
@@ -1016,7 +1066,7 @@ def build_reply(text, data, memory=None):
             intents_hit.append(name)
         memory["last_intent"] = intents_hit[-1]
         return _out("+".join(intents_hit), round(max(c for _, _, c, _ in ordered), 2),
-                    " ".join(replies), method=ordered[0][3])
+                    _stitch(replies), method=ordered[0][3])
 
     # 4) single intent -> detect on the WHOLE sentence (keeps math expressions
     #    and other phrasing intact rather than judging a fragment)
@@ -1024,6 +1074,19 @@ def build_reply(text, data, memory=None):
     if name == "identity" and not re.search(
             r"\b(you|your|yourself|u)\b", normalize(text)):
         name = fallback  # open-ended ("tell me about life") -> let fallback handle
+
+    # conversational context: right after the brain asked "how about you?",
+    # "i'm good thanks" is an answer about feelings, not a thank-you
+    if memory.get("last_intent") == "mood" and name in {"thanks", "affirm", "deny", fallback}:
+        cs = set(concepts_of(text))
+        if "good" in cs and "feeling_good" in data["intents"]:
+            name, conf = "feeling_good", max(conf, 0.7)
+        elif "bad" in cs and "feeling_bad" in data["intents"]:
+            name, conf = "feeling_bad", max(conf, 0.7)
+    # "no thanks" is a polite decline, not gratitude
+    if name == "thanks" and is_negated(text) and len(tokens(text)) <= 3 \
+            and "deny" in data["intents"]:
+        name = "deny"
 
     # incidental-keyword guard: a content-rich sentence that only grazes a
     # factual utility intent (date/time/weather) through a single word -- e.g.
@@ -1050,8 +1113,9 @@ def build_reply(text, data, memory=None):
             memory["teach_pending"] = text
             memory["last_intent"] = fallback
             return _out("unknown", 0.0,
-                        "I don't know that one yet. What should I say when you ask "
-                        "that? (type the answer, or 'skip')", awaiting=True)
+                        "You've got me there — I don't know that one yet. Tell me "
+                        "what I should say and I'll remember it (or type 'skip').",
+                        awaiting=True)
         # pragmatic ambiguity: a remark like "look at the time, it's time to go"
         # literally matches time/date but isn't a literal request. If she can talk
         # (model available), let her react / ask what Master actually meant rather
@@ -1073,13 +1137,18 @@ def build_reply(text, data, memory=None):
         # negation turns an affirmation into a denial ("no", "not right")
         if is_negated(text) and name == "affirm":
             name, intent = "deny", data["intents"].get("deny", intent)
+        # ...and flips a feeling ("I'm not doing great" -> feeling_bad)
+        if is_negated(text) and name in {"feeling_good", "feeling_bad"}:
+            flipped = "feeling_bad" if name == "feeling_good" else "feeling_good"
+            if flipped in data["intents"]:
+                name, intent = flipped, data["intents"][flipped]
         # missing required number -> ask for it
         if intent.get("needs_number") and not extract_numbers(text):
             memory["pending"] = "math"
             memory["last_intent"] = name
             return _out(name, round(conf, 2),
-                        "Sure, which numbers? (e.g. 6 times 7)", awaiting=True,
-                        method=method)
+                        "Sure — which numbers? Something like '6 times 7' works.",
+                        awaiting=True, method=method)
         return _finish(data, name, text, memory, conf, method=method)
 
     # 4a) bare follow-up inherits the last contextual intent + slots
@@ -1097,8 +1166,8 @@ def build_reply(text, data, memory=None):
     memory["teach_pending"] = text
     memory["last_intent"] = fallback
     return _out("unknown", 0.0,
-                "I don't know that one yet. What should I say when you ask that? "
-                "(type the answer, or 'skip')", awaiting=True)
+                "You've got me there — I don't know that one yet. Tell me what I "
+                "should say and I'll remember it (or type 'skip').", awaiting=True)
 
 
 def _out(intent, confidence, reply, awaiting=False, method="lexical", **extra):
@@ -1116,12 +1185,22 @@ def _finish(data, intent_name, text, memory, confidence, record=True, method="le
     fills["name_suffix"] = f" {memory['name']}" if memory.get("name") else ""
 
     if intent_name == "math" and str(fills.get("result", "")).startswith("("):
-        reply = "I couldn't work that out -- try something like '6 times 7'."
+        reply = "Hmm, I couldn't quite work that out — try something like '6 times 7'."
         if record:
             memory["last_intent"] = intent_name
         return _out(intent_name, confidence, reply, method=method)
 
-    template = random.choice(intent["responses"])
+    # natural variation: if the same intent fired twice in a row, prefer its
+    # "repeat_responses" ("Hello again!" instead of a second flat "Hello!"),
+    # and never read the exact same line twice back-to-back.
+    pool = intent["responses"]
+    if memory.get("last_intent") == intent_name and intent.get("repeat_responses"):
+        pool = intent["repeat_responses"]
+    template = random.choice(pool)
+    last_tpl = memory.setdefault("_last_tpl", {}).get(intent_name)
+    if len(pool) > 1 and template == last_tpl:
+        template = random.choice([t for t in pool if t != last_tpl])
+    memory["_last_tpl"][intent_name] = template
     try:
         reply = template.format(**fills)
     except (KeyError, IndexError):

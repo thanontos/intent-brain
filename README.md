@@ -40,7 +40,9 @@ The brain works in layers and degrades gracefully — it always runs, and gets s
 1. **Semantic similarity** *(optional, best)* — if `sentence-transformers` is installed, every intent's example phrasings become meaning-vectors and your sentence is matched by cosine similarity. `pip install sentence-transformers` to turn it on.
 2. **Lexical understanding** *(always on, no installs)* — words are lemmatized (`running/ran/runs → run`), expanded through a synonym map (`hour → time`), scored with IDF weighting, and matched with typo tolerance. Real paraphrase coverage with no model.
 
-On top of the matcher it also handles **negation** (`I am not happy` ≠ `I am happy`), **context** (bare follow-ups like `and tomorrow?` inherit the last intent), and an optional **generative fallback** to a local [Ollama](https://ollama.com) model or any OpenAI-compatible endpoint for true unknowns — otherwise it asks *you* to teach it the answer and remembers it.
+On top of the matcher it also handles **negation** (`I am not happy` ≠ `I am happy`, and flips the matched feeling), **context** (bare follow-ups like `and tomorrow?` inherit the last intent; `i'm good thanks` right after the brain asks *"how about you?"* is read as a feeling, not a thank-you), and an optional **generative fallback** to a local [Ollama](https://ollama.com) model or any OpenAI-compatible endpoint for true unknowns — otherwise it asks *you* to teach it the answer and remembers it.
+
+It also tries to *sound* like a person, with or without a model: greetings adapt to the time of day (`Good evening!`), an intent that fires twice in a row switches to its `repeat_responses` (`Hello again!` instead of a second flat `Hello!`), the same line is never read twice back-to-back, and multi-intent answers are stitched with natural connectors (`It's 9:16 PM. Oh, and today is Sunday...`). When a model **is** running, a built-in style guide is appended to every persona so replies use contractions, match your energy, and skip the assistant-speak.
 
 ## How it combines intents
 
